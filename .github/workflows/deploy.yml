@@ -1,0 +1,70 @@
+name: Deploy to GKE
+
+# TRIGGER: When do we run?
+on:
+  push:
+    branches: [ "main" ] # Run only when code is pushed to the 'main' branch
+
+# VARIABLES: Shared settings
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: us-central1 
+  REPOSITORY: flask-repo  # This must match the repo name you created in Step 2
+  IMAGE: flask-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # The robot uses a Linux Virtual Machine
+    steps:
+    
+    # 1. DOWNLOAD CODE
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. LOG IN TO GOOGLE CLOUD
+    # This uses the JSON key you saved in GitHub Secrets
+    - name: Google Auth
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    # 3. INSTALL CLOUD TOOLS
+    # Installs 'gcloud' and 'kubectl' on the robot's VM
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    # 4. LOG IN TO DOCKER REGISTRY
+    # Tells Docker it's okay to push images to Google's registry
+    - name: Docker Auth
+      run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
+
+    # 5. BUILD & PUSH IMAGE
+    # This builds the Dockerfile inside /app and uploads it to Google
+    - name: Build and Push
+      run: |
+        cd app
+        docker build -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest .
+        docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest
+
+    # 6. CONNECT TO KUBERNETES (GKE)
+    # Tells the robot which cluster to talk to
+    - name: Get GKE Credentials
+      uses: google-github-actions/get-gke-credentials@v1
+      with:
+        cluster_name: flask-gke-cluster
+        location: us-central1-a
+
+    # 7. DEPLOY TO CLUSTER
+    - name: Deploy to GKE
+      run: |
+        # Create a secret inside Kubernetes for the Database Password
+        kubectl delete secret db-secret --ignore-not-found
+        kubectl create secret generic db-secret \
+          --from-literal=host=${{ secrets.DB_HOST }} \
+          --from-literal=password=${{ secrets.DB_PASS }}
+
+        # MAGIC STEP: Replace the placeholder in deployment.yaml with the real Image URL
+        sed -i "s|REPLACE_ME_IMAGE_URI|${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest|g" k8s/deployment.yaml
+        
+        # Apply the YAML to the cluster
+        kubectl apply -f k8s/deployment.yaml

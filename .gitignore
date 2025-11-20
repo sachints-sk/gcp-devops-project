@@ -1,0 +1,12 @@
+# Ignore Terraform system files
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ignore Python system files
+__pycache__/
+*.pyc
+
+# Ignore Secrets (VERY IMPORTANT)
+key.json
+.env
