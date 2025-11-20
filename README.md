@@ -94,14 +94,16 @@ graph TD
 
 
 ## 📊 Screenshots
-(Add your Grafana & CI/CD screenshots here)
+
+### GitHub Actions Pipeline
+![GitHub Actions Pipeline](screenshots/cicd.png)
 
 ---
 
 ## 👤 Author
 **Sachin T.S**
 
-[LinkedIn](#) · [Portfolio](#)
+
 
 ---
 
