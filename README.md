@@ -95,6 +95,9 @@ graph TD
 
 ## 📊 Screenshots
 
+### Grafana Dashboard
+![Grafana Dashboard](screenshots/grafana.png)
+
 ### GitHub Actions Pipeline
 ![GitHub Actions Pipeline](screenshots/cicd.png)
 
