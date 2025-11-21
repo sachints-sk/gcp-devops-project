@@ -68,7 +68,7 @@ resource "google_container_cluster" "primary" {
   # We use a VPC-native cluster for Private IP DB access
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.subnet.name
-
+  deletion_protection = false
   initial_node_count = 1
 
   # Delete default node pool to create a custom one
@@ -84,6 +84,7 @@ resource "google_container_node_pool" "primary_nodes" {
   location   = "us-central1-a"
   cluster    = google_container_cluster.primary.name
   node_count = 1
+  
 
   node_config {
     machine_type = "e2-medium"
