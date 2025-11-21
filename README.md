@@ -40,6 +40,7 @@ graph TD
     Actions -->|Deploy| Flask
 ```
 
+![Architecture](screenshots/image.png)
 ---
 
 ## 🛠️ Tech Stack
